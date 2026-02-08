@@ -3,6 +3,8 @@
 Parquetastic ([https://parquetastic.dev](https://parquetastic.dev)) is a web app to inspect the internal structure of [Apache Parquet](https://parquet.apache.org/) files.
 Immediately understand your row groups, column chunks, pages and other metadata without first downloading a CLI tool or writing custom code!
 
+![Parquetastic showing file byte layout, row groups, and page-level details for an example Parquet file](.github/screenshot.png)
+
 Data never leaves your device. The Parquet file is fully processed locally in your browser.
 
 ## Main Features
