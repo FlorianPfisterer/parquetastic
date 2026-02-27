@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { formatBytes, formatNumber, EnumHelpers } from '../../parquetParser.js';
 import { getShortEncodingName, getPrimaryEncodings } from './encodingUtils.js';
+import FloatingTooltip from './FloatingTooltip.jsx';
+import ColumnChunkTooltip from './ColumnChunkTooltip.jsx';
 
 /**
  * Column header component for columns view
@@ -8,6 +10,14 @@ import { getShortEncodingName, getPrimaryEncodings } from './encodingUtils.js';
 export default function ColumnHeader({ column, pageIndex, columnWidth }) {
   const meta = column.meta_data;
   const pages = pageIndex?.offsetIndex?.page_locations || [];
+  const headerRef = useRef(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Check if we have any index/dict info to show
+  const hasTooltipContent =
+    column.offset_index_offset != null ||
+    column.column_index_offset != null ||
+    meta?.dictionary_page_offset != null;
 
   if (!meta) return null;
 
@@ -32,7 +42,13 @@ export default function ColumnHeader({ column, pageIndex, columnWidth }) {
       className="flex-shrink-0"
       style={{ width: `${columnWidth}px`, minWidth: `${columnWidth}px`, maxWidth: `${columnWidth}px` }}
     >
-      <div className="bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/40 rounded-lg overflow-hidden">
+      <div
+        ref={headerRef}
+        className={`bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/40 rounded-lg overflow-hidden
+                   ${hasTooltipContent ? 'cursor-help' : ''}`}
+        onMouseEnter={() => hasTooltipContent && setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
         <div className="px-2 py-2 bg-cyan-100/50 dark:bg-cyan-900/30">
           <div className="flex items-center justify-between gap-1">
             <span className="text-cyan-700 dark:text-cyan-200 font-medium text-xs truncate" title={fullPath}>
@@ -87,6 +103,13 @@ export default function ColumnHeader({ column, pageIndex, columnWidth }) {
           </div>
         </div>
       </div>
+
+      {/* Floating tooltip for index/dictionary info */}
+      {hasTooltipContent && (
+        <FloatingTooltip targetRef={headerRef} show={showTooltip}>
+          <ColumnChunkTooltip column={column} />
+        </FloatingTooltip>
+      )}
     </div>
   );
 }

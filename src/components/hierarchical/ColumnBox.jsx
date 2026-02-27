@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { formatBytes, formatNumber, EnumHelpers } from '../../parquetParser.js';
 import { ChevronIcon } from './Icons.jsx';
 import {
@@ -7,6 +7,8 @@ import {
   formatEncodingStats,
 } from './encodingUtils.js';
 import PageBox from './PageBox.jsx';
+import FloatingTooltip from './FloatingTooltip.jsx';
+import ColumnChunkTooltip from './ColumnChunkTooltip.jsx';
 
 /**
  * Column box for rows view - shows column metadata and expandable pages
@@ -20,6 +22,16 @@ export default function ColumnBox({ column, pageIndex, rowGroupRows, schemaEleme
   // Auto-expand if column has offset index (pages available)
   const hasPages = pages.length > 0;
   const [expanded, setExpanded] = useState(hasPages);
+
+  // Tooltip state for index/dictionary info
+  const headerRef = useRef(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Check if we have any index/dict info to show in tooltip
+  const hasTooltipContent =
+    column.offset_index_offset != null ||
+    column.column_index_offset != null ||
+    meta?.dictionary_page_offset != null;
 
   if (!meta) return null;
 
@@ -53,10 +65,13 @@ export default function ColumnBox({ column, pageIndex, rowGroupRows, schemaEleme
     >
       {/* Column Header */}
       <div
+        ref={headerRef}
         className={`px-3 py-2 bg-cyan-100/50 dark:bg-cyan-900/30 border-b border-cyan-200 dark:border-cyan-800/30
                    hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition-colors
-                   ${hasPages ? 'cursor-pointer' : 'cursor-default'}`}
+                   ${hasPages ? 'cursor-pointer' : hasTooltipContent ? 'cursor-help' : 'cursor-default'}`}
         onClick={() => hasPages && setExpanded(!expanded)}
+        onMouseEnter={() => hasTooltipContent && setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -157,6 +172,13 @@ export default function ColumnBox({ column, pageIndex, rowGroupRows, schemaEleme
       {/* No pages message */}
       {expanded && pages.length === 0 && (
         <div className="p-3 text-xs text-cyan-500 dark:text-cyan-600/50 italic">No page index available</div>
+      )}
+
+      {/* Floating tooltip for index/dictionary info */}
+      {hasTooltipContent && (
+        <FloatingTooltip targetRef={headerRef} show={showTooltip}>
+          <ColumnChunkTooltip column={column} />
+        </FloatingTooltip>
       )}
     </div>
   );
